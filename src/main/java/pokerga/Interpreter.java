@@ -13,21 +13,33 @@ import java.util.Objects;
  */
 public final class Interpreter {
 
+  private final int maxStack;
+
+  public Interpreter(int maxStack) {
+    if (maxStack < 1) {
+      throw new IllegalArgumentException("Max Stack size must be positive.");
+    }
+
+    this.maxStack = maxStack;
+  }
+
   /**
    * Interprets and executions the instructions according to the opcodes provided
-   * in the subject. Returns the best evaluation of the hand by the subject
+   * in the organism. Returns the best evaluation of the hand by the subject
    * (typically the highest value). Since multiple interpretive segments can
-   * exists in the subject string (e.g. between multiple begin/end pairs), the
-   * value returned here will be the best or highest value after all the segments
-   * have been evaluated against the hand.
+   * exists in the chromosome (e.g. between multiple begin/end pairs), the value
+   * returned here will be the best or highest value after all the segments have
+   * been evaluated against the hand.
    *
-   * @return The best evaluation of the specified hand by the subject
+   * @return The best evaluation of the specified hand by the organism
    */
-  public int process(Hand hand, String subject) {
+  public Result process(Hand hand, Organism organism) {
     Objects.requireNonNull(hand);
-    Objects.requireNonNull(subject);
-    Inst inst = new Inst(hand, subject);
-    return inst.process();
+    Objects.requireNonNull(organism);
+    Inst inst = new Inst(hand, organism.getChromosome(), this);
+    int result = inst.process();
+
+    return new Result(hand, organism, result);
   }
 
 
@@ -42,26 +54,41 @@ public final class Interpreter {
     final char[] tok = { '0', '0' }; // initialize to noopß;
     final ByteStack stack = new ByteStack();
 
-    // Required to be passed into constructor
     private final Hand hand;
     private final CharBuffer buf;
+
+    // We keep a copy of the Interpreter to access its configuration state.
+    // e.g. maxStack, maxDepth, etc.
+    private final Interpreter interpreter;
 
     // The return value is updated anytime the RET opcode is found. The RET code
     // will only update this if the newest interpretation is larger than this value.
     // Because multiple begin/end sequences can occur in the subject, the best
-    // (e.g. highest) value is what should be returned. This defaults to zero,
-    // which is the minimal score for any segment.
-    int returnValue = 0;
+    // (e.g. highest) value is what should be returned. This defaults to -1, which
+    // if not updated by the evaluation means that the organism didn't make any sort
+    // of meaningful return value at all.
+    int returnValue = -1;
 
-    public Inst(Hand hand, CharBuffer buf) {
+    // This depth is determined primarily by the loop operation.
+    // Nested loops are possible so we need to keep the depth in check.
+    int depth = 0;
+
+    /**
+     *
+     * @param hand
+     * @param subject
+     * @param maxDepth
+     */
+    public Inst(Hand hand, String subject, Interpreter interpreter) {
       this.hand = hand;
-      this.buf = buf;
+      this.buf = CharBuffer.wrap(subject);
+      this.interpreter = interpreter;
     }
 
-    public Inst(Hand hand, String subject) {
-      this(hand, CharBuffer.wrap(subject));
-    }
-
+    /**
+     *
+     * @return
+     */
     public int process() {
       // This main loop drives the overall processing. Other loops will
       // likely be called based on the opcodes consumed in this loop.
@@ -231,6 +258,8 @@ public final class Interpreter {
       case EOF:
       case UNK:
         break;
+      default:
+        throw new AssertionError();
       }
     }
 
@@ -252,6 +281,11 @@ public final class Interpreter {
 
 
     void push() {
+      if (stack.size() > interpreter.maxStack) {
+        System.err.println("Warning: maxStack reached: " + interpreter.maxStack);
+        return;
+      }
+
       // Returns -1 for values outside of the hex radix of 16.
       int val = Character.digit(tok[1], 16);
       if (val < 0) {
@@ -489,10 +523,18 @@ public final class Interpreter {
 
 
     void loop() {
+      // Avoid embedded loops
+      if (depth > 0) {
+        return;
+      }
+
       // We need to take two values from the stack. Ensure they are available.
       if (stack.size() < 2) {
         return;
       }
+
+      // Increase our depth counter
+      depth++;
 
       // The two values are our low and high loop values
       int high = stack.pop();
@@ -510,11 +552,14 @@ public final class Interpreter {
         execUntil(OpCode.ENDLOOP);
         buf.position(pos);
       }
+
     }
 
 
     void endloop() {
-      // Nothing to do.
+      if (depth > 0) {
+        depth--;
+      }
     }
 
   }
