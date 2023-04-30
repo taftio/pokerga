@@ -24,7 +24,6 @@ class InitializerTest {
     Organism org = organisms.get(0);
     assertEquals("5D905A30", org.getName());
     assertEquals("D4D951383D93CB7A", org.getChromosome());
-    assertEquals(0, org.getScore());
   }
 
 }

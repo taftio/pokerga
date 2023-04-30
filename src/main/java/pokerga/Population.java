@@ -33,11 +33,6 @@ public final class Population {
     return organisms.size();
   }
 
-  public Population next() {
-    organisms.forEach(Organism::resetScore);
-    return new Population(generation + 1, organisms);
-  }
-
   /**
    * Initializes a new population with the specified number of organisms each
    * having a randomly generated chromosome.

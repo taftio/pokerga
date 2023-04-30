@@ -1,10 +1,8 @@
 package pokerga;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Objects;
 
 public final class Organism {
-
-  private final AtomicInteger score = new AtomicInteger();
 
   private final String name;
   private final String chromosome;
@@ -22,21 +20,26 @@ public final class Organism {
     return chromosome;
   }
 
-  public int getScore() {
-    return score.get();
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if (obj instanceof Organism other) {
+      return Objects.equals(name, other.name)
+          && Objects.equals(chromosome, other.chromosome);
+    }
+    return false;
   }
 
-  public void incrementScore() {
-    score.incrementAndGet();
-  }
-
-  public void resetScore() {
-    score.set(0);
+  @Override
+  public int hashCode() {
+    return Objects.hash(name, chromosome);
   }
 
   @Override
   public String toString() {
-    return "Organism [" + name + "] score=" + score;
+    return "Organism[" + name + "]";
   }
 
 }

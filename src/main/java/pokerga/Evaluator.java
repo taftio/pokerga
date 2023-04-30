@@ -2,13 +2,15 @@ package pokerga;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.DisposableBean;
+import pokerga.AggregatedResult.Counts;
 import pokerga.Population.Initializer;
 import pokerga.mut.Mutator;
 
@@ -39,32 +41,41 @@ public final class Evaluator implements DisposableBean {
 
     // Iterate for the number of generations specified
     for (int i = 0; i < maxGenerations; i++) {
-      System.out.println("Evaluating the population with gen: " + population.getGeneration());
+      System.out.println("Evaluating Generation: " + population.getGeneration());
 
+      // Retrieve the list of organisms from the population
       List<Organism> organisms = population.getOrganisms();
+
+      // Create a ResultAggregator which will help keep track of our results.
+      AggregatedResult aggregator = new AggregatedResult();
+
+      // Keeps track how many hands we've received from the data file.
+      AtomicInteger handCount = new AtomicInteger();
 
       // Read the data file for each hand and submit the organisms for evaluation
       dataReader.read(hand -> {
-        System.out.println("Evaluating: " + hand);
-        evaluate(hand, organisms);
+        int hc = handCount.get();
+        if (hc % 100 == 0 && hc > 0) {
+          System.out.println("Evaluating hand " + hc);
+        }
+        evaluate(hand, organisms, aggregator);
+        handCount.incrementAndGet();
       });
 
-      // Evolve the population if appropriate
+      // Print out the results of this generation
+      System.out.println("Results:");
+      for (Map.Entry<Organism, Counts> entry : aggregator.getResults().entrySet()) {
+        System.out.println(entry);
+      }
+
+      // Evolve the population if needed
       if (i < maxGenerations - 1) {
         System.out.println("Evolving the population.");
-        population = mutator.mutate(population);
+        population = mutator.mutate(population, aggregator);
       }
-    }
 
-    // Sort the final results for display
-    List<Organism> organisms = population.getOrganisms();
-    Collections.sort(organisms, (o1, o2) -> {
-      return Integer.compare(o2.getScore(), o1.getScore());
-    });
+    } // end for max-generations
 
-    System.out.println();
-    System.out.println("Final scores. Organisms ranked by fitness score.");
-    organisms.forEach(System.out::println);
   }
 
 
@@ -74,7 +85,7 @@ public final class Evaluator implements DisposableBean {
   }
 
 
-  private void evaluate(Hand hand, List<Organism> organisms) {
+  private void evaluate(Hand hand, List<Organism> organisms, AggregatedResult aggregator) {
     try {
       List<Future<Result>> futures = new ArrayList<>(organisms.size());
 
@@ -87,9 +98,7 @@ public final class Evaluator implements DisposableBean {
 
       for (Future<Result> future : futures) {
         Result result = future.get();
-        if (result.getResult() == hand.evaluation()) {
-          result.getOrganism().incrementScore();
-        }
+        aggregator.aggregate(result);
       }
 
     } catch (InterruptedException | ExecutionException e) {
