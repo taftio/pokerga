@@ -86,6 +86,8 @@ public final class Population {
           organisms.add(future.get());
         }
 
+        previousNames.clear();
+
         return new Population(0, organisms);
 
       } catch (Exception e) {
@@ -94,17 +96,22 @@ public final class Population {
       } finally {
         exs.shutdown();
       }
+
     }
 
     private String randomName() {
-      for (;;) {
+      int n = 10;
+      for (int i = 0; i < n; i++) {
         int val = random.nextInt(Integer.MAX_VALUE);
         String name = String.format("%08X", val);
-        if (!previousNames.contains(name)) {
-          previousNames.add(name);
-          return name;
+        synchronized (previousNames) {
+          if (!previousNames.contains(name)) {
+            previousNames.add(name);
+            return name;
+          }
         }
       }
+      throw new IllegalStateException("Unable to generate a unique name for organism after " + n + " tries.");
     }
 
     private String randomChromosome() {
