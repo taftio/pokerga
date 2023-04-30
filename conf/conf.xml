@@ -16,7 +16,7 @@
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">
-    <constructor-arg name="maxStack" value="1024" />
+    <constructor-arg name="maxStack" value="2048" />
   </bean>
   
   <bean name="mutator" class="pokerga.mut.IdentityMutator">
@@ -27,7 +27,7 @@
     <constructor-arg ref="initializer" />
     <constructor-arg ref="interpreter" />
     <constructor-arg ref="mutator" />
-    <constructor-arg name="maxGenerations" value="2" />
+    <constructor-arg name="maxGenerations" value="1" />
   </bean>
 
 </beans>
