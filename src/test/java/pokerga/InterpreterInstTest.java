@@ -12,6 +12,8 @@ import pokerga.Interpreter.Inst;
 
 class InterpreterInstTest {
 
+  private static final Interpreter interpreter = new Interpreter(4096);
+
   @Test
   void testDanglingPush() {
     // It's not an error if we don't finish with an END marker.
@@ -19,7 +21,7 @@ class InterpreterInstTest {
     // marker or we reach EOF. If we reach EOF, our stack won't
     // clear, which is convenient for testing.
     String subj = "01 1A";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     inst.process();
 
     assertEquals((byte) 0xA, inst.stack.peek());
@@ -31,7 +33,7 @@ class InterpreterInstTest {
     // We have two pushes here, but our stack will be cleared with the call to END.
     // So we're only going to see the last one (1D) in this test.
     String subj = "1A 01 1B 02 1C 01 1D";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     inst.process();
 
     assertEquals((byte) 0xD, inst.stack.peek());
@@ -43,7 +45,7 @@ class InterpreterInstTest {
     String[] subs = { "", " ", "  ", "x", "00", "01", "02", "01 02 02", "01 ", "01  " };
 
     for (String sub : subs) {
-      Inst inst = new Inst(null, sub);
+      Inst inst = new Inst(null, sub, interpreter);
       inst.process();
       try {
         inst.process();
@@ -56,20 +58,20 @@ class InterpreterInstTest {
   @Test
   void testNestedBegin() {
     String subj = "01 01 02";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     inst.process();
   }
 
   @Test
   void testNestedEnd() {
     String subj = "01 02 02";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     inst.process();
   }
 
   @Test
   void testPush() {
-    Inst inst = new Inst(null, "");
+    Inst inst = new Inst(null, "", interpreter);
     inst.tok[0] = '1';
 
     char[] chars = new char[] { '0', '1', '2', 'A', 'F' };
@@ -98,7 +100,7 @@ class InterpreterInstTest {
   @Test
   void testNeg() {
     String subj = "01 10 22";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     ByteStack stack = inst.stack;
 
     inst.process();
@@ -106,7 +108,7 @@ class InterpreterInstTest {
     assertEquals(1, stack.pop());
 
     subj = "01 11 22";
-    inst = new Inst(null, subj);
+    inst = new Inst(null, subj, interpreter);
     stack = inst.stack;
 
     inst.process();
@@ -119,7 +121,7 @@ class InterpreterInstTest {
     // Test when the stack is 'true'
     // BEGIN, PUSH(1), IF, PUSH(A), ENDIF
     String subj = "01 11 40 1A 41";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     ByteStack stack = inst.stack;
 
     inst.process();
@@ -129,7 +131,7 @@ class InterpreterInstTest {
     // Test when the stack is 'false'
     // BEGIN, PUSH(0), IF, PUSH(A), ENDIF
     subj = "01 10 40 1A 41";
-    inst = new Inst(null, subj);
+    inst = new Inst(null, subj, interpreter);
     stack = inst.stack;
 
     inst.process();
@@ -165,7 +167,7 @@ class InterpreterInstTest {
 
     for (int i=0; i < subs.length; i++) {
       String subj = subs[i];
-      Inst inst = new Inst(null, subj);
+      Inst inst = new Inst(null, subj, interpreter);
       int expected = expecteds[i];
       int actual = inst.process();
       assertEquals(expected, actual, () -> "Return processing failed for subject: \"" + subj + "\"");
@@ -174,15 +176,16 @@ class InterpreterInstTest {
 
   @Test
   void testRead() {
-    Hand hand = Hand.builder()
+    Hand hand = Hand.newBuilder()
         .addCard(5, Suit.HEARTS)
         .addCard(7, Suit.DIAMONDS)
         .addCard(7, Suit.CLUBS)
         .addCard(8, Suit.CLUBS)
         .addCard(9, Suit.SPADES)
+        .evaluation(1)
         .build();
 
-    Inst inst = new Inst(hand, "");
+    Inst inst = new Inst(hand, "", interpreter);
     char[] tok = inst.tok;
     ByteStack stack = inst.stack;
     assertTrue(stack.isEmpty());
@@ -222,7 +225,7 @@ class InterpreterInstTest {
 
     // Read all of the ranks, ensure that they produce expected values
     // on the stack.
-    int[] ranks = hand.getRanks();
+    int[] ranks = hand.ranks();
     for (int i = 0; i < ranks.length; i++) {
       stack.push((byte) i);
       inst.read();
@@ -233,7 +236,7 @@ class InterpreterInstTest {
     // 0x1 specifies to read the suit of the card
     tok[1] = '1';
 
-    int[] suits = hand.getSuits();
+    int[] suits = hand.suits();
     for (int i = 0; i < suits.length; i++) {
       stack.push((byte) i);
       inst.read();
@@ -246,15 +249,16 @@ class InterpreterInstTest {
 
   @Test
   void testCount() {
-    Hand hand = Hand.builder()
+    Hand hand = Hand.newBuilder()
         .addCard(5, Suit.HEARTS)
         .addCard(7, Suit.DIAMONDS)
         .addCard(7, Suit.CLUBS)
         .addCard(8, Suit.CLUBS)
         .addCard(9, Suit.SPADES)
+        .evaluation(1)
         .build();
 
-    Inst inst = new Inst(hand, "");
+    Inst inst = new Inst(hand, "", interpreter);
     char[] tok = inst.tok;
     ByteStack stack = inst.stack;
     assertTrue(stack.isEmpty());
@@ -331,7 +335,7 @@ class InterpreterInstTest {
 
   @Test
   void testLoop() {
-    Inst inst = new Inst(null, "");
+    Inst inst = new Inst(null, "", interpreter);
 
     char[] tok = inst.tok;
     ByteStack stack = inst.stack;
@@ -359,7 +363,7 @@ class InterpreterInstTest {
   @Test
   void testLoopFull() {
     String subj = "01 11 1A 80 00 81";
-    Inst inst = new Inst(null, subj);
+    Inst inst = new Inst(null, subj, interpreter);
     ByteStack stack = inst.stack;
 
     inst.process();

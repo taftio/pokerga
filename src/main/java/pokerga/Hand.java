@@ -2,10 +2,8 @@ package pokerga;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import pokerga.Card.Suit;
 
 /**
@@ -16,15 +14,28 @@ public final class Hand implements Iterable<Card> {
   private final List<Card> hand;
   private final int[] ranks;
   private final int[] suits;
+  private final int evaluation;
 
-  private Hand(List<Card> hand, int[] ranks, int[] suits) {
+  private Hand(List<Card> hand, int[] ranks, int[] suits, int evaluation) {
     this.hand = hand;
     this.ranks = ranks;
     this.suits = suits;
+    this.evaluation = evaluation;
   }
 
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
+  }
+
+  public static Hand from(String[] data) {
+    return newBuilder()
+        .addCard(data[1], data[0])
+        .addCard(data[3], data[2])
+        .addCard(data[5], data[4])
+        .addCard(data[7], data[6])
+        .addCard(data[9], data[8])
+        .evaluation(data[10])
+        .build();
   }
 
   public List<Card> getHand() {
@@ -35,21 +46,38 @@ public final class Hand implements Iterable<Card> {
     return hand.get(index);
   }
 
-  public int[] getRanks() {
+  public int[] ranks() {
     return ranks;
   }
 
-  public int[] getSuits() {
+  public int[] suits() {
     return suits;
   }
+
+  public int evaluation() {
+    return evaluation;
+  }
+
 
   @Override
   public Iterator<Card> iterator() {
     return hand.iterator();
   }
 
+  @Override
+  public String toString() {
+    StringBuilder sb = new StringBuilder();
+    for (Card card : hand) {
+      sb.append(card.toString());
+      sb.append(" ");
+    }
+    sb.append("[").append(evaluation).append("]");
+    return sb.toString();
+  }
+
   public static class Builder {
-    private final Set<Card> cards = new HashSet<>();
+    private final List<Card> cards = new ArrayList<>();
+    private int evaluation = -1;
 
     public Builder addCard(int rank, Suit suit) {
       Card card = new Card(rank, suit);
@@ -57,9 +85,31 @@ public final class Hand implements Iterable<Card> {
       return this;
     }
 
+    public Builder addCard(int rank, int suit) {
+      return addCard(rank, Suit.from(suit));
+    }
+
+    public Builder addCard(String rank, String suit) {
+      return addCard(Integer.parseInt(rank), Integer.parseInt(suit));
+    }
+
+    public Builder evaluation(int evaluation) {
+      this.evaluation = evaluation;
+      return this;
+    }
+
+    public Builder evaluation(String evaluation) {
+      this.evaluation = Integer.parseInt(evaluation);
+      return this;
+    }
+
     public Hand build() {
       if (cards.size() != 5) {
         throw new IllegalStateException("Expected 5 cards in the hand, but instead was: " + cards.size());
+      }
+
+      if (evaluation < 0) {
+        throw new IllegalStateException("Evaluation must be set.");
       }
 
       List<Card> hand = new ArrayList<>(cards);
@@ -75,7 +125,7 @@ public final class Hand implements Iterable<Card> {
         suits[i] = hand.get(i).getSuit();
       }
 
-      return new Hand(hand, ranks, suits);
+      return new Hand(hand, ranks, suits, evaluation);
     }
   }
 }

@@ -29,6 +29,48 @@ public final class Card {
     return suit;
   }
 
+  @Override
+  public String toString() {
+    String rankstr;
+    switch (rank) {
+    case 1:
+      rankstr = "A";
+      break;
+    case 11:
+      rankstr = "J";
+      break;
+    case 12:
+      rankstr = "Q";
+      break;
+    case 13:
+      rankstr = "K";
+      break;
+    default:
+      rankstr = Integer.toString(rank);
+      break;
+    }
+
+    String suitstr;
+    switch (suit) {
+    case HEARTS:
+      suitstr = "H";
+      break;
+    case SPADES:
+      suitstr = "S";
+      break;
+    case DIAMONDS:
+      suitstr = "D";
+      break;
+    case CLUBS:
+      suitstr = "C";
+      break;
+    default:
+      throw new AssertionError();
+    }
+
+    return rankstr + suitstr;
+  }
+
   public enum Suit {
     HEARTS(1), SPADES(2), DIAMONDS(3), CLUBS(4);
 
