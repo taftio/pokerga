@@ -38,28 +38,29 @@ public final class Population {
    * having a randomly generated chromosome.
    */
   public static class Initializer {
-    private final int populationSize;
-    private final int chromosomeLength;
-    private final Random random;
+    private int populationSize = 100;
+    private int chromosomeLength = 1024;
+    private Random random = new Random();
 
     private final Set<String> previousNames = Collections.synchronizedSet(new HashSet<>());
 
-    public Initializer(int populationSize, int chromosomeLength, Random random) {
+    public void setPopulationSize(int populationSize) {
       if (populationSize < 1) {
         throw new IllegalArgumentException("Population size must be greater than zero.");
       }
-      if (chromosomeLength < 16 || chromosomeLength % 16 != 0) {
-        throw new IllegalArgumentException("Chromosome length should be positive and divisible by 16.");
-      }
-      Objects.requireNonNull(random);
-
       this.populationSize = populationSize;
-      this.chromosomeLength = chromosomeLength;
-      this.random = random;
     }
 
-    public Initializer(int populationSize, int chromosomeLength) {
-      this(populationSize, chromosomeLength, new Random());
+    public void setChromosomeLength(int chromosomeLength) {
+      if (chromosomeLength <= 0 || chromosomeLength % 16 != 0) {
+        throw new IllegalArgumentException("Chromosome length should be positive and divisible by 16.");
+      }
+      this.chromosomeLength = chromosomeLength;
+    }
+
+    public void setRandom(Random random) {
+      Objects.requireNonNull(random);
+      this.random = random;
     }
 
     public Population initialize() {

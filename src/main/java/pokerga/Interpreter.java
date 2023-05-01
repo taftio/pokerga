@@ -13,15 +13,23 @@ import java.util.Objects;
  */
 public final class Interpreter {
 
-  private final int maxStack;
+  private int maxDepth = 8;
+  private int maxStack = 4096;
 
-  public Interpreter(int maxStack) {
+  public void setMaxDepth(int maxDepth) {
+    if (maxDepth < 1) {
+      throw new IllegalArgumentException("Max Depth size must be positive.");
+    }
+    this.maxDepth = maxDepth;
+  }
+
+  public void setMaxStack(int maxStack) {
     if (maxStack < 1) {
       throw new IllegalArgumentException("Max Stack size must be positive.");
     }
-
     this.maxStack = maxStack;
   }
+
 
   /**
    * Interprets and executions the instructions according to the opcodes provided
@@ -259,7 +267,6 @@ public final class Interpreter {
 
     void push() {
       if (stack.size() > interpreter.maxStack) {
-        System.err.println("Warning: maxStack reached: " + interpreter.maxStack);
         return;
       }
 
@@ -501,7 +508,7 @@ public final class Interpreter {
 
     void loop() {
       // Avoid embedded loops
-      if (depth > 0) {
+      if (depth > interpreter.maxDepth) {
         return;
       }
 
