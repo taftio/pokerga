@@ -28,18 +28,6 @@ class InterpreterInstTest {
   }
 
   @Test
-  void testBeginEndBoundary() {
-    // This will test that we don't PUSH any items outside of a BEG/END boundary.
-    // We have two pushes here, but our stack will be cleared with the call to END.
-    // So we're only going to see the last one (1D) in this test.
-    String subj = "1A 01 1B 02 1C 01 1D";
-    Inst inst = new Inst(null, subj, interpreter);
-    inst.process();
-
-    assertEquals((byte) 0xD, inst.stack.peek());
-  }
-
-  @Test
   void testUnderflow() {
     // Ensure that we don't throw any exceptions for these weird parse states.
     String[] subs = { "", " ", "  ", "x", "00", "01", "02", "01 02 02", "01 ", "01  " };
@@ -53,20 +41,6 @@ class InterpreterInstTest {
         fail("Buffer Underflow detected for subject: ->" + sub + "<-", e);
       }
     }
-  }
-
-  @Test
-  void testNestedBegin() {
-    String subj = "01 01 02";
-    Inst inst = new Inst(null, subj, interpreter);
-    inst.process();
-  }
-
-  @Test
-  void testNestedEnd() {
-    String subj = "01 02 02";
-    Inst inst = new Inst(null, subj, interpreter);
-    inst.process();
   }
 
   @Test
@@ -119,8 +93,8 @@ class InterpreterInstTest {
   @Test
   void testIf() {
     // Test when the stack is 'true'
-    // BEGIN, PUSH(1), IF, PUSH(A), ENDIF
-    String subj = "01 11 40 1A 41";
+    // NOP, PUSH(1), IF, PUSH(A), ENDIF
+    String subj = "00 11 40 1A 41";
     Inst inst = new Inst(null, subj, interpreter);
     ByteStack stack = inst.stack;
 
@@ -129,8 +103,8 @@ class InterpreterInstTest {
     assertEquals(0xA, stack.pop());
 
     // Test when the stack is 'false'
-    // BEGIN, PUSH(0), IF, PUSH(A), ENDIF
-    subj = "01 10 40 1A 41";
+    // PUSH(0), IF, PUSH(A), ENDIF
+    subj = "00 10 40 1A 41";
     inst = new Inst(null, subj, interpreter);
     stack = inst.stack;
 
