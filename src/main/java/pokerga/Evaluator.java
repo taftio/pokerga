@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,20 +17,38 @@ import pokerga.mut.Mutator;
 
 public final class Evaluator implements DisposableBean {
 
-  private final DataReader dataReader;
-  private final Initializer initializer;
-  private final Interpreter interpreter;
-  private final Mutator mutator;
-  private final int maxGenerations;
-
   private final ExecutorService executor = Executors.newWorkStealingPool();
 
-  public Evaluator(DataReader dataReader, Initializer initializer, Interpreter interpreter, Mutator mutator,
-      int maxGenerations) {
+  private DataReader dataReader;
+  private Initializer initializer;
+  private Interpreter interpreter;
+  private Mutator mutator;
+  private int maxGenerations;
+
+  public void setDataReader(DataReader dataReader) {
+    Objects.requireNonNull(dataReader);
     this.dataReader = dataReader;
+  }
+
+  public void setInitializer(Initializer initializer) {
+    Objects.requireNonNull(initializer);
     this.initializer = initializer;
+  }
+
+  public void setInterpreter(Interpreter interpreter) {
+    Objects.requireNonNull(interpreter);
     this.interpreter = interpreter;
+  }
+
+  public void setMutator(Mutator mutator) {
+    Objects.requireNonNull(mutator);
     this.mutator = mutator;
+  }
+
+  public void setMaxGenerations(int maxGenerations) {
+    if (maxGenerations < 1) {
+      throw new IllegalArgumentException("Max Generations must be positive.");
+    }
     this.maxGenerations = maxGenerations;
   }
 

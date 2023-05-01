@@ -12,7 +12,7 @@ import pokerga.Interpreter.Inst;
 
 class InterpreterInstTest {
 
-  private static final Interpreter interpreter = new Interpreter(4096);
+  private static final Interpreter interpreter = new Interpreter();
 
   @Test
   void testDanglingPush() {

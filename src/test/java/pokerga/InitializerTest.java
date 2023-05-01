@@ -12,7 +12,10 @@ class InitializerTest {
   @Test
   void test() {
 
-    Initializer initializer = new Initializer(1, 16, new Random(0));
+    Initializer initializer = new Initializer();
+    initializer.setPopulationSize(1);
+    initializer.setChromosomeLength(16);
+    initializer.setRandom(new Random(0));
 
     Population population = initializer.initialize();
 

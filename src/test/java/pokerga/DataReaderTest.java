@@ -26,7 +26,8 @@ class DataReaderTest {
     };
 
     File file = new File("src/test/resources/data.test");
-    DataReader parser = new DataReader(file);
+    DataReader parser = new DataReader();
+    parser.setFile(file);
 
     List<Hand> list = new ArrayList<>();
     parser.read(list::add);
