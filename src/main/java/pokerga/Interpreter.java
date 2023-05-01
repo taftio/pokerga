@@ -93,14 +93,8 @@ public final class Interpreter {
       // This main loop drives the overall processing. Other loops will
       // likely be called based on the opcodes consumed in this loop.
       while (buf.hasRemaining()) {
-
-        // This will seek until it finds the BEG marker. At that point,
-        // it will BEG token and continue with other codes.
-        seekTo(OpCode.BEG);
-
-        // This will execute operations until it reaches the END marker.
-        // It will also call process with END before finishing out.
-        execUntil(OpCode.END);
+        // Execute instructions until we find an EOF
+        execUntil(OpCode.EOF);
       }
 
       return returnValue;
@@ -201,12 +195,6 @@ public final class Interpreter {
       case NOP:
         nop();
         break;
-      case BEG:
-        begin();
-        break;
-      case END:
-        end();
-        break;
       case PUSH:
         push();
         break;
@@ -266,17 +254,6 @@ public final class Interpreter {
 
     void nop() {
       // And a good nop to you, dear sir.
-    }
-
-
-    void begin() {
-      // Ignored. BEGIN is effectively a no-op the way we process.
-    }
-
-
-    void end() {
-      // Anytime we receive an END, we're going to clear our stack.
-      stack.clear();
     }
 
 

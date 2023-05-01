@@ -2,7 +2,7 @@ package pokerga;
 
 public enum OpCode {
 
-  NOP, BEG, END,
+  NOP,
   PUSH,
   DROP, DUP, NEG,
   ADD, SUB, INCR, DECR,
@@ -16,8 +16,7 @@ public enum OpCode {
 
   // This array is deliberately constructed to match the layout of the opcode
   // byte codes directly. The two dimensional array mirrors the two-digit hexcode
-  // encoding used by the opcode table. The first row, index '0' stores the first
-  // three values of the opcode table: NOP(0x00), BEGIN(0x01), END(0x02)
+  // encoding used by the opcode table.
   //
   // A lookup can be performed against this array in order to find the correct
   // opcode, by effectively taking the index from the two characters of the hex
@@ -27,7 +26,7 @@ public enum OpCode {
   // opcode value takes any value in the second nibble of the byte. e.g. it takes
   // a parameter value in the opcode. PUSH, READ, CNT all do this.
   private static OpCode[][] opcodes = {
-      {NOP, BEG, END},
+      { NOP },
       {PUSH},
       {DROP, DUP, NEG},
       {ADD, SUB, INCR, DECR},
