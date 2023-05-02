@@ -9,12 +9,17 @@ import pokerga.Organism;
 
 public final class RandomOrganism implements Supplier<Organism>, InitializingBean {
 
-  private int length = 1024;
+  private int length = 256;
+  private int maxOpCode = 0x81;
   private AtomicInteger counter = new AtomicInteger();
   private Random random = new Random();
 
   public void setLength(int length) {
     this.length = length;
+  }
+
+  public void setMaxOpCode(int maxOpCode) {
+    this.maxOpCode = maxOpCode;
   }
 
   public void setCounter(AtomicInteger counter) {
@@ -27,8 +32,11 @@ public final class RandomOrganism implements Supplier<Organism>, InitializingBea
 
   @Override
   public void afterPropertiesSet() throws Exception {
-    if (length <= 0 || length % 16 != 0) {
-      throw new IllegalArgumentException("Chromosome length should be positive and divisible by 16.");
+    if (length <= 0 || length % 8 != 0) {
+      throw new IllegalArgumentException("Chromosome length should be positive and divisible by 8.");
+    }
+    if (maxOpCode < 1 || maxOpCode > 256) {
+      throw new IllegalArgumentException("Max OpCode value must be between 1..256.");
     }
     Objects.requireNonNull(counter);
     Objects.requireNonNull(random);
@@ -43,9 +51,9 @@ public final class RandomOrganism implements Supplier<Organism>, InitializingBea
 
   private String createChromosome() {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0, n = length / 16; i < n; i++) {
-      long val = random.nextLong();
-      String s = String.format("%016X", val);
+    for (int i = 0; i < length; i++) {
+      int val = random.nextInt(maxOpCode);
+      String s = String.format("%02X", val);
       sb.append(s);
     }
     return sb.toString();

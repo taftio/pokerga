@@ -39,17 +39,7 @@ public final class Organism {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append("Organism[");
-    sb.append(name);
-    sb.append("] ");
-    if (chromosome.length() <= 16) {
-      sb.append(chromosome);
-    } else {
-      sb.append(chromosome.substring(0, 16));
-      sb.append("[...]");
-    }
-    return sb.toString();
+    return "Organism[" + name + "]";
   }
 
 }

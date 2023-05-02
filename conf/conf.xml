@@ -11,7 +11,8 @@
   </bean>
 
   <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
-    <property name="length" value="1024" />
+    <property name="length" value="256" />
+    <property name="maxOpCode" value="0x81" />
   </bean>
 
   <bean name="initialPopulation" class="pokerga.init.InitialPopulation">
