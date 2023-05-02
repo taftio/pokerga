@@ -9,7 +9,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -18,7 +17,7 @@ import pokerga.mut.Mutator;
 
 public final class Evaluator implements InitializingBean, DisposableBean {
 
-  private final ExecutorService executor = Executors.newWorkStealingPool();
+  private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
   private HandReader handReader;
   private Supplier<Population> initialPopulation;
@@ -79,18 +78,35 @@ public final class Evaluator implements InitializingBean, DisposableBean {
       // Create a ResultAggregator which will help keep track of our results.
       AggregatedResult aggregator = new AggregatedResult();
 
-      // Keeps track how many hands we've received from the data file.
-      AtomicInteger handCount = new AtomicInteger();
+      // Stores our future tasks
+      List<Future<?>> futures = new ArrayList<>();
 
       // Read the data file for each hand and submit the organisms for evaluation
       handReader.read(hand -> {
-        int hc = handCount.get();
-        if (hc % 100 == 0 && hc > 0) {
-          System.out.println("Evaluating hand " + hc);
-        }
-        evaluate(hand, organisms, aggregator);
-        handCount.incrementAndGet();
+        Future<?> future = executor.submit(() -> {
+          evaluate(hand, organisms, aggregator);
+        });
+        futures.add(future);
       });
+
+      // Wait for the evaluations to finish
+      try {
+        int count = 0;
+        for (Future<?> future : futures) {
+          if (count % 100 == 0 && count > 0) {
+            System.out.println("Evaluating hand " + count);
+          }
+          future.get();
+          count++;
+        }
+
+      } catch (ExecutionException e) {
+        throw new IllegalStateException(e);
+
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      }
 
       // Print out the results of this generation
       System.out.println("Results:");
@@ -110,29 +126,10 @@ public final class Evaluator implements InitializingBean, DisposableBean {
 
 
   private void evaluate(Hand hand, List<Organism> organisms, AggregatedResult aggregator) {
-    try {
-      List<Future<Result>> futures = new ArrayList<>(organisms.size());
-
-      for (Organism organism : organisms) {
-        Future<Result> future = executor.submit(() -> {
-          return interpreter.process(hand, organism);
-        });
-        futures.add(future);
-      }
-
-      for (Future<Result> future : futures) {
-        Result result = future.get();
-        aggregator.aggregate(result);
-      }
-
-    } catch (ExecutionException e) {
-      throw new IllegalStateException(e);
-
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException(e);
+    for (Organism organism : organisms) {
+      Result result = interpreter.process(hand, organism);
+      aggregator.aggregate(result);
     }
-
   }
 
 }
