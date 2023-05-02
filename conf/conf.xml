@@ -8,7 +8,7 @@
 
   <bean name="handReader" class="pokerga.HandReader">
     <property name="file" value="data/poker-hand-training-true.data"/>
-    <property name="maxHands" value="-1" />
+    <property name="maxHands" value="1000" />
   </bean>
 
   <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
