@@ -18,8 +18,7 @@ import pokerga.mut.Mutator;
 
 public final class Evaluator implements InitializingBean, DisposableBean {
 
-  private final ExecutorService executor = Executors
-      .newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
+  private final ExecutorService executor = Executors.newWorkStealingPool();
 
   private HandReader handReader;
   private Supplier<Population> initialPopulation;

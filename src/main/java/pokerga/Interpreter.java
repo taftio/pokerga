@@ -13,15 +13,8 @@ import java.util.Objects;
  */
 public final class Interpreter {
 
-  private int maxDepth = 4;
-  private int maxStack = 4096;
-
-  public void setMaxDepth(int maxDepth) {
-    if (maxDepth < 1) {
-      throw new IllegalArgumentException("Max Depth size must be positive.");
-    }
-    this.maxDepth = maxDepth;
-  }
+  private final int maxDepth = 1;
+  private int maxStack = 2048;
 
   public void setMaxStack(int maxStack) {
     if (maxStack < 1) {
@@ -508,7 +501,7 @@ public final class Interpreter {
 
     void loop() {
       // Avoid embedded loops
-      if (depth > interpreter.maxDepth) {
+      if (depth >= interpreter.maxDepth) {
         return;
       }
 
@@ -517,12 +510,17 @@ public final class Interpreter {
         return;
       }
 
-      // Increase our depth counter
-      depth++;
-
       // The two values are our low and high loop values
       int high = stack.pop();
       int low = stack.pop();
+
+      // Don't execute if high is out of range or low is larger.
+      if (high > 13 || low >= high) {
+        return;
+      }
+
+      // Increase our depth counter
+      depth++;
 
       // We need to record our current position in the buffer so we can
       // return for execution at the top of each loop.

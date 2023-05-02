@@ -22,8 +22,7 @@
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">
-    <property name="maxDepth" value="4" />
-    <property name="maxStack" value="4096" />
+    <property name="maxStack" value="2048" />
   </bean>
 
   <bean name="mutator" class="pokerga.mut.IdentityMutator">
