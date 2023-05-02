@@ -101,6 +101,11 @@ public final class Hand implements Iterable<Card> {
       }
 
       List<Card> hand = new ArrayList<>(cards);
+
+      Collections.sort(hand, (h1, h2) -> {
+        return Integer.compare(h1.getRank(), h2.getRank());
+      });
+
       hand = Collections.unmodifiableList(hand);
 
       return new Hand(hand, evaluation);
