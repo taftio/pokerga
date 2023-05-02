@@ -17,8 +17,9 @@ public final class AggregatedResult {
   public void aggregate(Result result) {
     int evaluation = result.getHand().evaluation();
     Counts counts = results.computeIfAbsent(result.getOrganism(), x -> new Counts());
+    counts.total(evaluation);
     if (result.getResult() == evaluation) {
-      counts.increment(evaluation);
+      counts.correct(evaluation);
     }
   }
 
@@ -31,25 +32,33 @@ public final class AggregatedResult {
   }
 
   public static final class Counts {
-    private final AtomicInteger[] counts = new AtomicInteger[10];
+    private final AtomicInteger[] correct = new AtomicInteger[10];
+    private final AtomicInteger[] total = new AtomicInteger[10];
 
     public Counts() {
-      for (int i = 0; i < counts.length; i++) {
-        counts[i] = new AtomicInteger();
+      for (int i = 0; i < correct.length; i++) {
+        correct[i] = new AtomicInteger();
+        total[i] = new AtomicInteger();
       }
     }
 
-    public void increment(int index) {
-      counts[index].incrementAndGet();
+    public void correct(int index) {
+      correct[index].incrementAndGet();
+    }
+
+    public void total(int index) {
+      total[index].incrementAndGet();
     }
 
     @Override
     public String toString() {
       StringBuilder sb = new StringBuilder();
       sb.append("[");
-      for (int i = 0; i < counts.length; i++) {
-        sb.append(counts[i].get());
-        if (i < counts.length - 1) {
+      for (int i = 0; i < correct.length; i++) {
+        sb.append(correct[i].get());
+        sb.append("/");
+        sb.append(total[i].get());
+        if (i < correct.length - 1) {
           sb.append(",");
         }
       }
