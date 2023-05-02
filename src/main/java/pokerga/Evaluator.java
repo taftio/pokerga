@@ -21,14 +21,14 @@ public final class Evaluator implements InitializingBean, DisposableBean {
   private final ExecutorService executor = Executors
       .newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
 
-  private DataReader dataReader;
+  private HandReader handReader;
   private Supplier<Population> initialPopulation;
   private Interpreter interpreter;
   private Mutator mutator;
   private int maxGenerations;
 
-  public void setDataReader(DataReader dataReader) {
-    this.dataReader = dataReader;
+  public void setHandReader(HandReader handReader) {
+    this.handReader = handReader;
   }
 
   public void setInitialPopulation(Supplier<Population> initialPopulation) {
@@ -49,7 +49,7 @@ public final class Evaluator implements InitializingBean, DisposableBean {
 
   @Override
   public void afterPropertiesSet() throws Exception {
-    Objects.requireNonNull(dataReader);
+    Objects.requireNonNull(handReader);
     Objects.requireNonNull(initialPopulation);
     Objects.requireNonNull(interpreter);
     Objects.requireNonNull(mutator);
@@ -84,7 +84,7 @@ public final class Evaluator implements InitializingBean, DisposableBean {
       AtomicInteger handCount = new AtomicInteger();
 
       // Read the data file for each hand and submit the organisms for evaluation
-      dataReader.read(hand -> {
+      handReader.read(hand -> {
         int hc = handCount.get();
         if (hc % 100 == 0 && hc > 0) {
           System.out.println("Evaluating hand " + hc);

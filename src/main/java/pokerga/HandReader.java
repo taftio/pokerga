@@ -13,14 +13,19 @@ import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import org.springframework.beans.factory.InitializingBean;
 
-public final class DataReader implements InitializingBean {
+public final class HandReader implements InitializingBean {
 
   private static final Pattern regex = Pattern.compile(",");
 
   private File file = null;
+  private int maxHands = 1000;
 
   public void setFile(File file) {
     this.file = file;
+  }
+
+  public void setMaxHands(int maxHands) {
+    this.maxHands = maxHands;
   }
 
   @Override
@@ -32,8 +37,13 @@ public final class DataReader implements InitializingBean {
   }
 
   public void read(Consumer<Hand> consumer) throws IOException {
+    int count = 0;
     try (BufferedReader reader = reader(file)) {
       for (;;) {
+        if (maxHands > 0 && ++count > maxHands) {
+          break;
+        }
+
         String line = reader.readLine();
         if (line == null) {
           break;

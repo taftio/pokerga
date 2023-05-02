@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class DataReaderTest {
+class HandReaderTest {
 
   @Test
   void test() throws IOException {
@@ -26,11 +26,11 @@ class DataReaderTest {
     };
 
     File file = new File("src/test/resources/data.test");
-    DataReader parser = new DataReader();
-    parser.setFile(file);
+    HandReader reader = new HandReader();
+    reader.setFile(file);
 
     List<Hand> list = new ArrayList<>();
-    parser.read(list::add);
+    reader.read(list::add);
 
     assertEquals(hands.length, list.size());
 
@@ -39,6 +39,24 @@ class DataReaderTest {
       assertEquals(hands[i], hand.toString());
     }
 
+  }
+
+  @Test
+  void testMaxHands() throws IOException {
+    int[] input = { -1, 0, 1, 2 };
+    int[] expected = { 10, 10, 1, 2 };
+
+    for (int i = 0; i < input.length; i++) {
+      File file = new File("src/test/resources/data.test");
+      HandReader reader = new HandReader();
+      reader.setFile(file);
+      reader.setMaxHands(input[i]);
+
+      List<Hand> list = new ArrayList<>();
+      reader.read(list::add);
+
+      assertEquals(expected[i], list.size());
+    }
   }
 
 }
