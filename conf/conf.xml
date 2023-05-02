@@ -10,22 +10,26 @@
     <property name="file" value="data/poker-hand-training-true.data"/>
   </bean>
 
-  <bean name="initializer" class="pokerga.Population.Initializer">
-    <property name="populationSize" value="100" />
-    <property name="chromosomeLength" value="1024" />
+  <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
+    <property name="length" value="1024" />
+  </bean>
+
+  <bean name="initialPopulation" class="pokerga.init.InitialPopulation">
+    <property name="size" value="100" />
+    <property name="organismSupplier" ref="randomOrganism" />
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">
-    <property name="maxDepth" value="8" />
+    <property name="maxDepth" value="4" />
     <property name="maxStack" value="4096" />
   </bean>
-  
+
   <bean name="mutator" class="pokerga.mut.IdentityMutator">
   </bean>
-  
+
   <bean class="pokerga.Evaluator">
     <property name="dataReader" ref="dataReader" />
-    <property name="initializer" ref="initializer" />
+    <property name="initialPopulation" ref="initialPopulation" />
     <property name="interpreter" ref="interpreter" />
     <property name="mutator" ref="mutator" />
     <property name="maxGenerations" value="1" />

@@ -10,52 +10,64 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import pokerga.AggregatedResult.Counts;
-import pokerga.Population.Initializer;
 import pokerga.mut.Mutator;
 
-public final class Evaluator implements DisposableBean {
+public final class Evaluator implements InitializingBean, DisposableBean {
 
-  private final ExecutorService executor = Executors.newWorkStealingPool();
+  private final ExecutorService executor = Executors
+      .newFixedThreadPool(Runtime.getRuntime().availableProcessors() / 2 + 1);
 
   private DataReader dataReader;
-  private Initializer initializer;
+  private Supplier<Population> initialPopulation;
   private Interpreter interpreter;
   private Mutator mutator;
   private int maxGenerations;
 
   public void setDataReader(DataReader dataReader) {
-    Objects.requireNonNull(dataReader);
     this.dataReader = dataReader;
   }
 
-  public void setInitializer(Initializer initializer) {
-    Objects.requireNonNull(initializer);
-    this.initializer = initializer;
+  public void setInitialPopulation(Supplier<Population> initialPopulation) {
+    this.initialPopulation = initialPopulation;
   }
 
   public void setInterpreter(Interpreter interpreter) {
-    Objects.requireNonNull(interpreter);
     this.interpreter = interpreter;
   }
 
   public void setMutator(Mutator mutator) {
-    Objects.requireNonNull(mutator);
     this.mutator = mutator;
   }
 
   public void setMaxGenerations(int maxGenerations) {
+    this.maxGenerations = maxGenerations;
+  }
+
+  @Override
+  public void afterPropertiesSet() throws Exception {
+    Objects.requireNonNull(dataReader);
+    Objects.requireNonNull(initialPopulation);
+    Objects.requireNonNull(interpreter);
+    Objects.requireNonNull(mutator);
     if (maxGenerations < 1) {
       throw new IllegalArgumentException("Max Generations must be positive.");
     }
-    this.maxGenerations = maxGenerations;
   }
+
+  @Override
+  public void destroy() throws Exception {
+    executor.shutdown();
+  }
+
 
   public void evaluate() throws IOException {
     // Initialize the population
     System.out.println("Initializing the population.");
-    Population population = initializer.initialize();
+    Population population = initialPopulation.get();
     System.out.println("Finished initializing the population with " + population.size() + " organisms.");
 
     // Iterate for the number of generations specified
@@ -98,12 +110,6 @@ public final class Evaluator implements DisposableBean {
   }
 
 
-  @Override
-  public void destroy() throws Exception {
-    executor.shutdown();
-  }
-
-
   private void evaluate(Hand hand, List<Organism> organisms, AggregatedResult aggregator) {
     try {
       List<Future<Result>> futures = new ArrayList<>(organisms.size());
@@ -120,7 +126,10 @@ public final class Evaluator implements DisposableBean {
         aggregator.aggregate(result);
       }
 
-    } catch (InterruptedException | ExecutionException e) {
+    } catch (ExecutionException e) {
+      throw new IllegalStateException(e);
+
+    } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(e);
     }

@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 public final class Interpreter {
 
-  private int maxDepth = 8;
+  private int maxDepth = 4;
   private int maxStack = 4096;
 
   public void setMaxDepth(int maxDepth) {
