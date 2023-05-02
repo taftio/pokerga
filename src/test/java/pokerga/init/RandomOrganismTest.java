@@ -10,17 +10,18 @@ import pokerga.Organism;
 class RandomOrganismTest {
 
   @Test
-  void test() {
+  void test() throws Exception {
     RandomOrganism rando = new RandomOrganism();
-    rando.setLength(8);
+    rando.setLength(16);
     rando.setCounter(new AtomicInteger(8));
     rando.setRandom(new Random(0));
+    rando.afterPropertiesSet();
 
     String[] names = {
         "00000008", "00000009", "0000000A", "0000000B"
     };
     String[] chromes = {
-        "5731257A052F0E4E", "781A1120802E596B", "100C740E55214144", "17076F2E24500244"
+        "BB20B45FD4D95138", "3D93CB799B3970BE", "A32DC9F64F1DF03A", "8CE970B71DF42503"
     };
 
     for (int i=0; i < names.length; i++) {
@@ -30,16 +31,4 @@ class RandomOrganismTest {
     }
   }
 
-  @Test
-  void testMaxOpCode() throws Exception {
-    RandomOrganism rando = new RandomOrganism();
-    rando.setLength(8);
-    rando.setMaxOpCode(1);
-    rando.afterPropertiesSet();
-
-    Organism expected = new Organism("00000000", "0000000000000000");
-    Organism actual = rando.get();
-
-    assertEquals(expected, actual);
-  }
 }

@@ -8,17 +8,16 @@
 
   <bean name="handReader" class="pokerga.HandReader">
     <property name="file" value="data/poker-hand-training-true.data"/>
-    <property name="maxHands" value="1000" />
+    <property name="maxHands" value="-1" />
   </bean>
 
   <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
-    <property name="length" value="256" />
-    <property name="maxOpCode" value="0x90" />
+    <property name="length" value="512" />
   </bean>
 
   <bean name="initialPopulation" class="pokerga.init.InitialPopulation">
+      <property name="organismSupplier" ref="randomOrganism" />
     <property name="size" value="100" />
-    <property name="organismSupplier" ref="randomOrganism" />
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">

@@ -51,8 +51,7 @@ public final class Interpreter {
    * invocation.
    */
   static class Inst {
-    // These are package protected for testing
-    final char[] tok = { '0', '0' }; // initialize to noopß;
+    // Package protected for testing.
     final ByteStack stack = new ByteStack();
 
     private final Hand hand;
@@ -113,10 +112,10 @@ public final class Interpreter {
      */
     OpCode next() {
       skipNoise();
-      if (buf.remaining() < 2) {
+      if (buf.isEmpty()) {
         return OpCode.EOF;
       }
-      buf.get(tok);
+      int tok = Character.digit(buf.get(), 16);
       return OpCode.from(tok);
     }
 
@@ -193,20 +192,14 @@ public final class Interpreter {
      */
     void process(OpCode code) {
       switch (code) {
-      case NOP:
-        nop();
-        break;
       case PUSH:
         push();
-        break;
-      case DROP:
-        drop();
         break;
       case DUP:
         dup();
         break;
-      case NEG:
-        neg();
+      case DROP:
+        drop();
         break;
       case ADD:
         add();
@@ -214,20 +207,17 @@ public final class Interpreter {
       case SUB:
         sub();
         break;
-      case INCR:
-        incr();
+      case CMP:
+        cmp();
         break;
-      case DECR:
-        decr();
+      case NOT:
+        not();
         break;
       case IFOP:
         ifop();
         break;
       case ENDIF:
         endif();
-        break;
-      case CMP:
-        cmp();
         break;
       case RET:
         ret();
@@ -253,18 +243,26 @@ public final class Interpreter {
     }
 
 
-    void nop() {
-      // And a good nop to you, dear sir.
-    }
-
-
+    /**
+     *
+     */
     void push() {
       if (stack.size() > interpreter.maxStack) {
         return;
       }
 
+      skipNoise();
+      if (buf.isEmpty()) {
+        return;
+      }
+
+      // Get the next character from the buffer. This is the
+      // value we place on the stack.
+      char ch = buf.get();
+
+      // Convert the hexdigit char to a byte
       // Returns -1 for values outside of the hex radix of 16.
-      int val = Character.digit(tok[1], 16);
+      int val = Character.digit(ch, 16);
       if (val < 0) {
         return;
       }
@@ -272,15 +270,9 @@ public final class Interpreter {
       stack.push((byte) val);
     }
 
-
-    void drop() {
-      if (stack.isEmpty()) {
-        return;
-      }
-      stack.discard();
-    }
-
-
+    /**
+     *
+     */
     void dup() {
       if (stack.isEmpty()) {
         return;
@@ -291,7 +283,68 @@ public final class Interpreter {
     }
 
 
-    void neg() {
+    /**
+     *
+     */
+    void drop() {
+      if (stack.isEmpty()) {
+        return;
+      }
+      stack.discard();
+    }
+
+
+    /**
+     *
+     */
+    void add() {
+      if (stack.size() < 2) {
+        return;
+      }
+
+      int b1 = stack.pop();
+      int b2 = stack.pop();
+      int sum = b1 + b2;
+      stack.push((byte) sum);
+    }
+
+
+    /**
+     *
+     */
+    void sub() {
+      if (stack.size() < 2) {
+        return;
+      }
+
+      int b1 = stack.pop();
+      int b2 = stack.pop();
+      int diff = b1 - b2;
+      stack.push((byte) diff);
+    }
+
+
+    /**
+     *
+     */
+    void cmp() {
+      if (stack.size() < 2) {
+        return;
+      }
+
+      int b1 = stack.pop();
+      int b2 = stack.pop();
+      if (b1 == b2) {
+        stack.push((byte) 1);
+      } else {
+        stack.push((byte) 0);
+      }
+    }
+
+    /**
+     *
+     */
+    void not() {
       if (stack.isEmpty()) {
         return;
       }
@@ -305,52 +358,10 @@ public final class Interpreter {
     }
 
 
-    void add() {
-      if (stack.size() < 2) {
-        return;
-      }
 
-      int b1 = stack.pop();
-      int b2 = stack.pop();
-      int sum = b1 + b2;
-      stack.push((byte) sum);
-    }
-
-
-    void sub() {
-      if (stack.size() < 2) {
-        return;
-      }
-
-      int b1 = stack.pop();
-      int b2 = stack.pop();
-      int diff = b1 - b2;
-      stack.push((byte) diff);
-    }
-
-
-    void incr() {
-      if (stack.isEmpty()) {
-        return;
-      }
-
-      int b = stack.pop();
-      b += 1;
-      stack.push((byte) b);
-    }
-
-
-    void decr() {
-      if (stack.isEmpty()) {
-        return;
-      }
-
-      int b = stack.pop();
-      b -= 1;
-      stack.push((byte) b);
-    }
-
-
+    /**
+     *
+     */
     void ifop() {
       if (stack.isEmpty()) {
         return;
@@ -368,26 +379,17 @@ public final class Interpreter {
     }
 
 
+    /**
+     *
+     */
     void endif() {
       // nothing to do
     }
 
 
-    void cmp() {
-      if (stack.size() < 2) {
-        return;
-      }
-
-      int b1 = stack.pop();
-      int b2 = stack.pop();
-      if (b1 == b2) {
-        stack.push((byte) 1);
-      } else {
-        stack.push((byte) 0);
-      }
-    }
-
-
+    /**
+     *
+     */
     void ret() {
       // Returns the value on the top of the stack. By return, we basically mean
       // capture it into our returnValue variable. We do this by checking if the
@@ -415,10 +417,13 @@ public final class Interpreter {
     }
 
 
+    /**
+     *
+     */
     void read() {
       // Reads either the suit or rank of the specified card index and pushes
       // the value to the stack. The card index is taken from the stack. Whether we
-      // are reading the suit or rank depends on the second nibble in the token.
+      // are reading the suit or rank depends on the second nibble in the byte.
       // For any encoding or state errors, we just return early.
 
       // Check if the stack is empty.
@@ -426,22 +431,30 @@ public final class Interpreter {
         return;
       }
 
-      // Param: 2nd nibble of Token:
-      // 0x0 = Rank
-      // 0x1 = Suit
-      int param = Character.digit(tok[1], 16);
-      if (param < 0x0 || param > 0x1) {
+      skipNoise();
+      if (buf.isEmpty()) {
         return;
       }
 
-      int idx = stack.pop();
-      // We only have 5 cards, so the index here needs to reflect that.
-      if (idx < 0 || idx > 4) {
+      // Read the index from the stack. We only have 5 cards, so we perform
+      // mod 5 on this to get the index.
+      int idx = stack.pop() % 5;
+      if (idx < 0 || idx > 5) {
         return;
       }
+
+      // Param: 2nd nibble of Token mod 2
+      // Evens = Rank
+      // Odds = Suit
+      int param = Character.digit(buf.get(), 16);
+
+      // If the param is even, read the rank of the card.
+      // Otherwise, read the suit.
+      boolean rank = param % 2 == 0;
+
 
       int value;
-      if (param == 0x0) {
+      if (rank) {
         // Read the rank
         value = hand.get(idx).getRank();
 
@@ -455,40 +468,50 @@ public final class Interpreter {
     }
 
 
+    /**
+     *
+     */
     void count() {
       if (stack.isEmpty()) {
         return;
       }
 
-      int param = Character.digit(tok[1], 16);
-      if (param < 0 || param > 1) {
+      skipNoise();
+      if (buf.isEmpty()) {
         return;
       }
 
+      int param = Character.digit(buf.get(), 16);
+      boolean rank = param % 2 == 0;
+
       int count = 0;
 
-      if (param == 0) {
+      if (rank) {
         // Counts the rank in the range of 1..13
-        int rank = stack.pop();
-        if (rank < 1 || rank > 13) {
+        int val = stack.pop();
+        if (val < 1 || val > 13) {
           return;
         }
 
         for (Card card : hand) {
-          if (card.getRank() == rank) {
+          if (card.getRank() == val) {
             count++;
           }
         }
 
       } else {
         // Counts the suit in the range of 1..4
-        int suit = stack.pop();
-        if (suit < 1 || suit > 4) {
+        // We do some math to allow all numbers with % 4.
+        // e.g. if a '5' comes in, it gets shifted down to '1'
+        int val = stack.pop() - 1;
+        val %= 4;
+        val += 1;
+        if (val < 1 || val > 4) {
           return;
         }
 
         for (Card card : hand) {
-          if (card.getSuit() == suit) {
+          if (card.getSuit() == val) {
             count++;
           }
         }
@@ -499,8 +522,11 @@ public final class Interpreter {
     }
 
 
+    /**
+     *
+     */
     void loop() {
-      // Avoid embedded loops
+      // Avoid deeply nested loops
       if (depth >= interpreter.maxDepth) {
         return;
       }
@@ -538,6 +564,9 @@ public final class Interpreter {
     }
 
 
+    /**
+     *
+     */
     void endloop() {
       if (depth > 0) {
         depth--;

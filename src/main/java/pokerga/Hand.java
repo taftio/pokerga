@@ -12,14 +12,10 @@ import pokerga.Card.Suit;
 public final class Hand implements Iterable<Card> {
 
   private final List<Card> hand;
-  private final int[] ranks;
-  private final int[] suits;
   private final int evaluation;
 
-  private Hand(List<Card> hand, int[] ranks, int[] suits, int evaluation) {
+  private Hand(List<Card> hand, int evaluation) {
     this.hand = hand;
-    this.ranks = ranks;
-    this.suits = suits;
     this.evaluation = evaluation;
   }
 
@@ -44,14 +40,6 @@ public final class Hand implements Iterable<Card> {
 
   public Card get(int index) {
     return hand.get(index);
-  }
-
-  public int[] ranks() {
-    return ranks;
-  }
-
-  public int[] suits() {
-    return suits;
   }
 
   public int evaluation() {
@@ -115,17 +103,7 @@ public final class Hand implements Iterable<Card> {
       List<Card> hand = new ArrayList<>(cards);
       hand = Collections.unmodifiableList(hand);
 
-      int[] ranks = new int[5];
-      for (int i = 0; i < ranks.length; i++) {
-        ranks[i] = hand.get(i).getRank();
-      }
-
-      int[] suits = new int[5];
-      for (int i = 0; i < suits.length; i++) {
-        suits[i] = hand.get(i).getSuit();
-      }
-
-      return new Hand(hand, ranks, suits, evaluation);
+      return new Hand(hand, evaluation);
     }
   }
 }
