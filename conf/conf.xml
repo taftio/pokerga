@@ -6,12 +6,14 @@
     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"
     >
 
-  <bean name="dataReader" class="pokerga.DataReader">
+  <bean name="handReader" class="pokerga.HandReader">
     <property name="file" value="data/poker-hand-training-true.data"/>
+    <property name="maxHands" value="1000" />
   </bean>
 
   <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
-    <property name="length" value="1024" />
+    <property name="length" value="256" />
+    <property name="maxOpCode" value="0x90" />
   </bean>
 
   <bean name="initialPopulation" class="pokerga.init.InitialPopulation">
@@ -20,15 +22,14 @@
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">
-    <property name="maxDepth" value="4" />
-    <property name="maxStack" value="4096" />
+    <property name="maxStack" value="2048" />
   </bean>
 
   <bean name="mutator" class="pokerga.mut.IdentityMutator">
   </bean>
 
   <bean class="pokerga.Evaluator">
-    <property name="dataReader" ref="dataReader" />
+    <property name="handReader" ref="handReader" />
     <property name="initialPopulation" ref="initialPopulation" />
     <property name="interpreter" ref="interpreter" />
     <property name="mutator" ref="mutator" />
