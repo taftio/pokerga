@@ -25,7 +25,7 @@ public final class Main {
       evaluator.evaluate();
 
     } catch (Exception e) {
-      System.err.println("An exception occurred: " + e.getMessage());
+      e.printStackTrace();
       System.exit(1);
     }
 

@@ -2,34 +2,36 @@ package pokerga;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.Supplier;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
-import pokerga.AggregatedResult.Counts;
-import pokerga.mut.Mutator;
+import pokerga.AggregatedResults.AggregatedResult;
+import pokerga.init.InitialPopulation;
+import pokerga.op.Operator;
+import pokerga.score.Scorer;
 
 public final class Evaluator implements InitializingBean, DisposableBean {
 
   private final ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
   private HandReader handReader;
-  private Supplier<Population> initialPopulation;
+  private InitialPopulation initialPopulation;
   private Interpreter interpreter;
-  private Mutator mutator;
-  private int maxGenerations;
+  private Scorer scorer;
+  private Operator operator;
+  private int generations;
 
   public void setHandReader(HandReader handReader) {
     this.handReader = handReader;
   }
 
-  public void setInitialPopulation(Supplier<Population> initialPopulation) {
+  public void setInitialPopulation(InitialPopulation initialPopulation) {
     this.initialPopulation = initialPopulation;
   }
 
@@ -37,12 +39,16 @@ public final class Evaluator implements InitializingBean, DisposableBean {
     this.interpreter = interpreter;
   }
 
-  public void setMutator(Mutator mutator) {
-    this.mutator = mutator;
+  public void setScorer(Scorer scorer) {
+    this.scorer = scorer;
   }
 
-  public void setMaxGenerations(int maxGenerations) {
-    this.maxGenerations = maxGenerations;
+  public void setOperator(Operator operator) {
+    this.operator = operator;
+  }
+
+  public void setGenerations(int generations) {
+    this.generations = generations;
   }
 
   @Override
@@ -50,9 +56,10 @@ public final class Evaluator implements InitializingBean, DisposableBean {
     Objects.requireNonNull(handReader);
     Objects.requireNonNull(initialPopulation);
     Objects.requireNonNull(interpreter);
-    Objects.requireNonNull(mutator);
-    if (maxGenerations < 1) {
-      throw new IllegalArgumentException("Max Generations must be positive.");
+    Objects.requireNonNull(scorer);
+    Objects.requireNonNull(operator);
+    if (generations < 1) {
+      throw new IllegalArgumentException("Generations must be positive.");
     }
   }
 
@@ -63,20 +70,36 @@ public final class Evaluator implements InitializingBean, DisposableBean {
 
 
   public void evaluate() throws IOException {
+
+    System.out.println();
+    System.out.println("-------------------------------------------------------");
+    System.out.println();
+    System.out.println("         Population size: " + initialPopulation.getPopulationSize());
+    System.out.println("             Generations: " + generations);
+    System.out.println("         Number of hands: " + handReader.getMaxHands());
+    System.out.println();
+    System.out.println("-------------------------------------------------------");
+    System.out.println();
+
     // Initialize the population
     System.out.println("Initializing the population.");
     Population population = initialPopulation.get();
-    System.out.println("Finished initializing the population with " + population.size() + " organisms.");
+    System.out.println("Finished initializing the population.");
+
+    // This is a list of scores for the final population. This is updated inside
+    // of the loop, but we only care about the scores associated to the last
+    // population.
+    final List<ScoredResult> scores = new ArrayList<>();
 
     // Iterate for the number of generations specified
-    for (int i = 0; i < maxGenerations; i++) {
-      System.out.println("Evaluating Generation: " + population.getGeneration());
+    for (int i = 0; i < generations; i++) {
+      System.out.println("Generation: " + (population.getGeneration() + 1) + " / " + generations);
 
       // Retrieve the list of organisms from the population
       List<Organism> organisms = population.getOrganisms();
 
       // Create a ResultAggregator which will help keep track of our results.
-      AggregatedResult aggregator = new AggregatedResult();
+      AggregatedResults aggregator = new AggregatedResults();
 
       // Stores our future tasks
       List<Future<?>> futures = new ArrayList<>();
@@ -93,10 +116,10 @@ public final class Evaluator implements InitializingBean, DisposableBean {
       try {
         int count = 0;
         for (Future<?> future : futures) {
-          if (count % 100 == 0 && count > 0) {
-            System.out.println("Evaluating hand " + count);
-          }
           future.get();
+          if (count > 0 && count % 1000 == 0) {
+            System.out.println("  Hand: " + count);
+          }
           count++;
         }
 
@@ -108,24 +131,44 @@ public final class Evaluator implements InitializingBean, DisposableBean {
         throw new IllegalStateException(e);
       }
 
-      // Print out the results of this generation
-      System.out.println("Results:");
-      for (Map.Entry<Organism, Counts> entry : aggregator.getResults().entrySet()) {
-        System.out.println(entry);
+      // Record the scores of this generation.
+      // First we clear out any previous scores.
+      scores.clear();
+
+      // Calculate the scores of the current generation.
+      // Sort the scores according to their natural ordering
+      for (AggregatedResult result : aggregator.getResults()) {
+        ScoredResult score = scorer.score(result);
+        scores.add(score);
+      }
+      Collections.sort(scores);
+
+      // Defensive copy of the scores to pass into the operator
+      // This helps ensure that an operator doesn't manipulate
+      // anything in the scores list.
+      List<ScoredResult> copy = new ArrayList<>(scores);
+      copy = Collections.unmodifiableList(copy);
+
+      // Evolve the population if needed.
+      // Create a new population object to hold the mutated results.
+      if (i < generations - 1) {
+        int next = population.getGeneration() + 1;
+        List<Organism> evolved = operator.get(copy);
+        population = new Population(next, evolved);
       }
 
-      // Evolve the population if needed
-      if (i < maxGenerations - 1) {
-        System.out.println("Evolving the population.");
-        population = mutator.mutate(population, aggregator);
-      }
+    } // end for loop
 
-    } // end for max-generations
+    // Print out the scores of this generation
+    System.out.println("Results:");
+    for (ScoredResult score : scores) {
+      System.out.println(score);
+    }
 
   }
 
 
-  private void evaluate(Hand hand, List<Organism> organisms, AggregatedResult aggregator) {
+  private void evaluate(Hand hand, List<Organism> organisms, AggregatedResults aggregator) {
     for (Organism organism : organisms) {
       Result result = interpreter.process(hand, organism);
       aggregator.aggregate(result);

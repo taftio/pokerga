@@ -11,9 +11,12 @@ class RandomOrganismTest {
 
   @Test
   void test() throws Exception {
+    OrganismFactory factory = new OrganismFactory();
+    factory.setCounter(new AtomicInteger(8));
+
     RandomOrganism rando = new RandomOrganism();
-    rando.setLength(16);
-    rando.setCounter(new AtomicInteger(8));
+    rando.setChromosomeLength(16);
+    rando.setFactory(factory);
     rando.setRandom(new Random(0));
     rando.afterPropertiesSet();
 

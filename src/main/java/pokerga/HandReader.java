@@ -24,6 +24,10 @@ public final class HandReader implements InitializingBean {
     this.file = file;
   }
 
+  public int getMaxHands() {
+    return maxHands;
+  }
+
   public void setMaxHands(int maxHands) {
     this.maxHands = maxHands;
   }

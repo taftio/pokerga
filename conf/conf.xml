@@ -6,33 +6,75 @@
     http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd"
     >
 
+  <bean name="populationSize" class="java.lang.Integer" factory-method="valueOf">
+    <constructor-arg value="300" />
+  </bean>
+
+  <bean name="organismFactory" class="pokerga.init.OrganismFactory">
+  </bean>
+
   <bean name="handReader" class="pokerga.HandReader">
     <property name="file" value="data/poker-hand-training-true.data"/>
-    <property name="maxHands" value="1000" />
+    <property name="maxHands" value="-1" />
   </bean>
 
   <bean name="randomOrganism" class="pokerga.init.RandomOrganism">
-    <property name="length" value="512" />
+    <property name="chromosomeLength" value="512" />
+    <property name="factory" ref="organismFactory" />
   </bean>
 
   <bean name="initialPopulation" class="pokerga.init.InitialPopulation">
-      <property name="organismSupplier" ref="randomOrganism" />
-    <property name="size" value="100" />
+    <property name="organismSupplier" ref="randomOrganism" />
+    <property name="populationSize" ref="populationSize" />
   </bean>
 
   <bean name="interpreter" class="pokerga.Interpreter">
     <property name="maxStack" value="2048" />
   </bean>
 
-  <bean name="mutator" class="pokerga.mut.IdentityMutator">
+  <bean name="scorer" class="pokerga.score.StandardScorer">
+  </bean>
+
+  <bean name="operator" class="pokerga.op.Operator">
+    <property name="filters">
+      <list>
+        <bean class="pokerga.op.DuplicateEliminator">
+        </bean>
+      </list>
+    </property>
+    <property name="selectors">
+      <list>
+        <bean class="pokerga.op.ElitistSelector">
+          <property name="count" value="10" />
+        </bean>
+        <bean class="pokerga.op.RandomSelector">
+          <property name="count" value="50" />
+        </bean>
+      </list>
+    </property>
+    <property name="mutators">
+      <list>
+        <bean class="pokerga.op.CrossOverMutator">
+          <property name="max" value="50" />
+        </bean>
+        <bean class="pokerga.op.RandomMutator">
+          <property name="organismChance" value="20" />
+          <property name="geneChance" value="20" />
+        </bean>
+      </list>
+    </property>
+    <property name="factory" ref="organismFactory" />
+    <property name="supplier" ref="randomOrganism" />
+    <property name="populationSize" ref="populationSize" />
   </bean>
 
   <bean class="pokerga.Evaluator">
     <property name="handReader" ref="handReader" />
     <property name="initialPopulation" ref="initialPopulation" />
     <property name="interpreter" ref="interpreter" />
-    <property name="mutator" ref="mutator" />
-    <property name="maxGenerations" value="1" />
+    <property name="scorer" ref="scorer" />
+    <property name="operator" ref="operator" />
+    <property name="generations" value="20" />
   </bean>
 
 </beans>
