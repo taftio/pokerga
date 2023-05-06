@@ -35,6 +35,9 @@ public final class CrossOverMutator implements Mutator, InitializingBean {
   @Override
   public List<String> mutate(List<Organism> organisms) {
     int n = Math.min(organisms.size(), max);
+    if (n % 2 == 1) {
+      n -= 1;
+    }
 
     List<String> list = new ArrayList<>();
     for (int i = 0; i < n; i += 2) {

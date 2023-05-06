@@ -7,7 +7,7 @@
     >
 
   <bean name="populationSize" class="java.lang.Integer" factory-method="valueOf">
-    <constructor-arg value="300" />
+    <constructor-arg value="100" />
   </bean>
 
   <bean name="organismFactory" class="pokerga.init.OrganismFactory">
@@ -48,17 +48,17 @@
           <property name="count" value="10" />
         </bean>
         <bean class="pokerga.op.RandomSelector">
-          <property name="count" value="50" />
+          <property name="count" value="75" />
         </bean>
       </list>
     </property>
     <property name="mutators">
       <list>
         <bean class="pokerga.op.CrossOverMutator">
-          <property name="max" value="50" />
+          <property name="max" value="25" />
         </bean>
         <bean class="pokerga.op.RandomMutator">
-          <property name="organismChance" value="20" />
+          <property name="organismChance" value="25" />
           <property name="geneChance" value="20" />
         </bean>
       </list>
@@ -74,7 +74,7 @@
     <property name="interpreter" ref="interpreter" />
     <property name="scorer" ref="scorer" />
     <property name="operator" ref="operator" />
-    <property name="generations" value="20" />
+    <property name="generations" value="100" />
   </bean>
 
 </beans>

@@ -66,12 +66,10 @@ public final class Operator implements InitializingBean {
   }
 
   public List<Organism> get(List<ScoredResult> scores) {
-    System.out.println("scores size before: " + scores.size());
     // Filter the scores
     for (Filter filter : filters) {
       scores = filter.filter(scores);
     }
-    System.out.println("scores size after: " + scores.size());
 
     List<Organism> mutables = new ArrayList<>();
     List<Organism> immutables = new ArrayList<>();
@@ -81,12 +79,9 @@ public final class Operator implements InitializingBean {
     for (Selector selector : selectors) {
       List<Organism> selected = selector.select(scores);
 
-      // We always add the selected organisms to our mutable list
-      mutables.addAll(selected);
-
-      // Additionally, we keep a safe copy that won't be mutated in
-      // the separate immutables list
-      if (!selector.canMutate()) {
+      if (selector.canMutate()) {
+        mutables.addAll(selected);
+      } else {
         immutables.addAll(selected);
       }
     }
