@@ -21,7 +21,7 @@ class InitialPopulationTest {
     organisms.add(organismSupplier.get());
 
     InitialPopulation supplier = new InitialPopulation();
-    supplier.setSize(1);
+    supplier.setPopulationSize(1);
     supplier.setOrganismSupplier(organismSupplier);
 
     Population expected = new Population(0, organisms);
